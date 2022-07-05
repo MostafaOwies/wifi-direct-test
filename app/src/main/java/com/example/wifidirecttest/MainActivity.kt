@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.net.wifi.p2p.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.wifidirecttest.databinding.ActivityMainBinding
@@ -39,11 +41,24 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private var handler:Handler= Handler(object :Handler.Callback {
+        override fun handleMessage(msg: Message): Boolean {
+            when(msg.what){
+                1 ->{
+                    val readBuff :ByteArray= msg.obj as ByteArray
+                    val tempMessage=String(readBuff,0,msg.arg1)
+                    binding?.messegeTv?.text = tempMessage
+                }
+            }
+            return true
+        }
+    })
+
     private fun initRecyclerView(){
         binding?.devicesRv?.layoutManager=LinearLayoutManager(this)
         val adapter=ItemAdapter(deviceNameArray)
         binding?.devicesRv?.adapter=adapter
-        adapter.setOnClickListener(object :ItemAdapter.OnClickListener{
+      /*  adapter.setOnClickListener(object :ItemAdapter.OnClickListener{
             @SuppressLint("MissingPermission")
             override fun onClick(position: Int, item: String) {
                 var device :WifiP2pDevice=deviceArray[position]!!
@@ -63,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                     )}
             }
 
-        })
+        })*/
     }
 
     var peerListListener : WifiP2pManager.PeerListListener= object : WifiP2pManager.PeerListListener{
