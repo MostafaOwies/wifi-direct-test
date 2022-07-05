@@ -17,11 +17,8 @@ import java.net.InetAddress
 class MainActivity : AppCompatActivity() {
 
     private var binding :ActivityMainBinding?=null
-    val mWifiP2pManager: WifiP2pManager? by lazy(LazyThreadSafetyMode.NONE) {
-        getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager?
-    }
-
-    var channel: WifiP2pManager.Channel? = null
+    private lateinit var mWifiP2pManager :WifiP2pManager
+    private lateinit var channel: WifiP2pManager.Channel
     private var receiver: BroadcastReceiver? = null
     private var intentFilter = IntentFilter()
 
@@ -38,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
         initRecyclerView()
         initializeWifiP2P()
+        searchForPeers()
 
     }
 
@@ -89,9 +87,9 @@ class MainActivity : AppCompatActivity() {
                 deviceNameArray= arrayOf(peerList.deviceList.size.toString())
                 deviceArray= arrayOfNulls(peerList.deviceList.size)
                 var index = 0
-                for (device:WifiP2pDevice in peerList.deviceList){
-                    deviceNameArray[index]=device.deviceName
-                    deviceArray[index]=device
+                peerList.deviceList.forEach{
+                    deviceNameArray[index]=it.deviceName
+                    deviceArray[index]=it
                     index++
                 }
             }
@@ -99,8 +97,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeWifiP2P(){
-        channel = mWifiP2pManager?.initialize(this, mainLooper, null)
-        channel?.also { channel ->
+        mWifiP2pManager= getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = mWifiP2pManager.initialize(this, mainLooper, null)
+        channel.also { channel ->
             receiver = WiFiDirectBroadcastReceiver(mWifiP2pManager!!, channel, this)
         }
 
@@ -115,7 +114,7 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun searchForPeers(){
         binding?.searchBtn?.setOnClickListener {
-            mWifiP2pManager?.discoverPeers(channel, object : WifiP2pManager.ActionListener {
+            mWifiP2pManager.discoverPeers(channel, object : WifiP2pManager.ActionListener {
                 override fun onSuccess() {
                 }
 
