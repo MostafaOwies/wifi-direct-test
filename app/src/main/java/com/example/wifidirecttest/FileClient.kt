@@ -7,18 +7,18 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 
-class FileClient(
-    private var socket:Socket,
-    private var host :String,
-    private var mhostAddress:InetAddress?
-) {
+class FileClient ( private var mHostAddress:InetAddress? = null){
+    private lateinit var socket:Socket
+    private lateinit var host :String
+
 
     suspend fun clientSocket (){
         withContext(Dispatchers.Default) {
-            host = mhostAddress?.hostAddress!!
+            host = mHostAddress?.hostAddress!!
             socket = Socket()
             try {
                 socket.connect(InetSocketAddress(host, 8888), 500)
+                SendReceive(socket).sendReceive()
             }catch (e:Exception){
                 e.printStackTrace()
             }

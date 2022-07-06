@@ -14,9 +14,12 @@ import android.os.Message
 import android.util.Log
 import android.widget.ListAdapter
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.wifidirecttest.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
 import java.net.InetAddress
+import java.net.Socket
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +31,7 @@ class MainActivity : AppCompatActivity() {
 
     private val peers = mutableListOf<WifiP2pDevice>()
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -36,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         initializeWifiP2P()
         searchForPeers()
+        sendBtnClick()
     }
 
 
@@ -53,19 +58,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var handler: Handler = Handler(object : Handler.Callback {
+     val connectionListener = WifiP2pManager.ConnectionInfoListener { info ->
+
+        val groupOwnerAddress: InetAddress? = info.groupOwnerAddress
+
+        if (info.groupFormed && info.isGroupOwner) {
+           lifecycleScope.launch{ FileServer().serverSocket()}
+        } else if (info.groupFormed) {
+            lifecycleScope.launch{FileClient(groupOwnerAddress).clientSocket()}
+        }
+    }
+
+     var handler: Handler = Handler(object : Handler.Callback {
         override fun handleMessage(msg: Message): Boolean {
             when (msg.what) {
-                1 -> {
+                Constants.MESSAGE_READ -> {
                     val readBuff: ByteArray = msg.obj as ByteArray
                     val tempMessage = String(readBuff, 0, msg.arg1)
-                    binding?.messegeTv?.text = tempMessage
+                    binding?.messegeTv?.setText(tempMessage)
                 }
             }
             return true
         }
     })
 
+    private fun sendBtnClick(){
+
+        binding?.sendBtn?.setOnClickListener{
+           val message :String = binding?.messegeEt?.text.toString()
+            SendReceive().write(message.toByteArray())
+        }
+    }
 
     private fun initRecyclerView(peersList: MutableList<WifiP2pDevice>) {
         binding?.devicesRv?.layoutManager = LinearLayoutManager(this)
@@ -146,5 +169,7 @@ class MainActivity : AppCompatActivity() {
             unregisterReceiver(receiver)
         }
     }
+
+
 }
 
