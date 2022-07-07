@@ -7,18 +7,18 @@ import kotlinx.coroutines.withContext
 import java.net.ServerSocket
 import java.net.Socket
 
-class FileServer {
+class FileServer:Thread() {
     private lateinit var serverSocket:ServerSocket
       lateinit var socket:Socket
-    suspend fun serverSocket(){
-        withContext(Dispatchers.Default){
-            try {
-             serverSocket =ServerSocket(8888)
-             socket =serverSocket.accept()
-                SendReceive(socket).sendReceive()
-            }catch (e:Exception){
+    private lateinit var sendReceive:SendReceive
+    override fun run() {
+        try {
+            serverSocket =ServerSocket(8888)
+            socket =serverSocket.accept()
+            sendReceive= SendReceive(socket)
+            sendReceive.start()
+        }catch (e:Exception){
             e.printStackTrace()
-            }
         }
     }
 }

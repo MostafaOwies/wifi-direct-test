@@ -5,23 +5,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.appcompat.view.menu.ActionMenuItemView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.wifidirecttest.databinding.PeersListItemBinding
 
 
 class ItemAdapter(private val items : MutableList<WifiP2pDevice>
 ): RecyclerView.Adapter<ItemAdapter.ViewHolder>() {
 
-    private lateinit var mOnClickListener: OnClickListener
-    interface OnClickListener {
+    private lateinit var mOnItemClickListener: OnItemClickListener
+    interface OnItemClickListener {
         fun onClick(position: Int)
     }
-    fun setOnClickListener(onClickListener: OnClickListener){
-        mOnClickListener=onClickListener
+    fun setOnClickListener(onItemClickListener: OnItemClickListener){
+        mOnItemClickListener=onItemClickListener
     }
 
-    class ViewHolder (itemView: View,listener:OnClickListener):RecyclerView.ViewHolder(itemView){
+    class ViewHolder (itemView: View,listener:OnItemClickListener):RecyclerView.ViewHolder(itemView){
         val deviceName:TextView=itemView.findViewById(R.id.device_name)
         init {
             itemView.setOnClickListener{
@@ -32,7 +30,7 @@ class ItemAdapter(private val items : MutableList<WifiP2pDevice>
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val itemView=LayoutInflater.from(parent.context).inflate(R.layout.peers_list_item,parent,false)
-        return ViewHolder(itemView,mOnClickListener)
+        return ViewHolder(itemView,mOnItemClickListener)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {

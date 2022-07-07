@@ -12,14 +12,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.util.Log
-import android.widget.ListAdapter
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.wifidirecttest.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
 import java.net.InetAddress
-import java.net.Socket
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,13 +29,16 @@ class MainActivity : AppCompatActivity() {
 
     private val peers = mutableListOf<WifiP2pDevice>()
 
+    private lateinit var sendReceive:SendReceive
+    private lateinit var fileClient:FileClient
+    private lateinit var fileServer: FileServer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
 
-
+        sendReceive=SendReceive()
         initializeWifiP2P()
         searchForPeers()
         sendBtnClick()
@@ -59,13 +60,13 @@ class MainActivity : AppCompatActivity() {
     }
 
      val connectionListener = WifiP2pManager.ConnectionInfoListener { info ->
-
-        val groupOwnerAddress: InetAddress? = info.groupOwnerAddress
-
+        val groupOwnerAddress: InetAddress = info.groupOwnerAddress
         if (info.groupFormed && info.isGroupOwner) {
-           lifecycleScope.launch{ FileServer().serverSocket()}
+           fileServer= FileServer()
+            fileServer.start()
         } else if (info.groupFormed) {
-            lifecycleScope.launch{FileClient(groupOwnerAddress).clientSocket()}
+            fileClient= FileClient(groupOwnerAddress)
+            fileClient.start()
         }
     }
 
@@ -75,7 +76,7 @@ class MainActivity : AppCompatActivity() {
                 Constants.MESSAGE_READ -> {
                     val readBuff: ByteArray = msg.obj as ByteArray
                     val tempMessage = String(readBuff, 0, msg.arg1)
-                    binding?.messegeTv?.setText(tempMessage)
+                    binding?.messegeTv?.text = tempMessage
                 }
             }
             return true
@@ -83,10 +84,10 @@ class MainActivity : AppCompatActivity() {
     })
 
     private fun sendBtnClick(){
-
         binding?.sendBtn?.setOnClickListener{
            val message :String = binding?.messegeEt?.text.toString()
-            SendReceive().write(message.toByteArray())
+            Toast.makeText(this@MainActivity,message,Toast.LENGTH_SHORT).show()
+            sendReceive.write(message.toByteArray())
         }
     }
 
@@ -96,11 +97,11 @@ class MainActivity : AppCompatActivity() {
         binding?.devicesRv?.adapter = adapter
 
 
-        adapter.setOnClickListener(object : ItemAdapter.OnClickListener {
+        adapter.setOnClickListener(object : ItemAdapter.OnItemClickListener {
             @SuppressLint("MissingPermission")
             override fun onClick(position: Int) {
                 Toast.makeText(this@MainActivity,"Device Clicked",Toast.LENGTH_SHORT).show()
-                val device = peers[0]
+                val device = peers[position]
                 val config = WifiP2pConfig().apply {
                     deviceAddress = device.deviceAddress
                     wps.setup = WpsInfo.PBC
